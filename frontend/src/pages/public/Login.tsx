@@ -6,8 +6,10 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import api from '../../services/api';
 import { isAdminRole } from '../../lib/role';
+import { useSeo } from '../../hooks/useSeo';
 
 export const Login = () => {
+    useSeo({ pageType: 'LOGIN' });
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);

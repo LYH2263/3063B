@@ -7,7 +7,7 @@ import AdminLayout from './layouts/AdminLayout';
 import PublicLayout from './layouts/PublicLayout';
 
 import {
-  AdminDashboard, AdminWorks, AdminUsers, AdminStyles, AdminMessages, AdminSettings, AdminOperationLogs, AdminMediaLibrary, AdminReports,
+  AdminDashboard, AdminWorks, AdminUsers, AdminStyles, AdminMessages, AdminSettings, AdminOperationLogs, AdminMediaLibrary, AdminReports, AdminSeo,
   Home, Works, Login, Register, Profile, WorkDetail, MessageList, MessageDetail
 } from './pages';
 
@@ -39,6 +39,7 @@ const App = () => {
                 <Route path="styles" element={<AdminStyles />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="seo" element={<AdminSeo />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="logs" element={<AdminOperationLogs />} />
               </Route>

@@ -7,6 +7,7 @@ export { AdminSettings } from './admin/Settings';
 export { AdminOperationLogs } from './admin/OperationLogs';
 export { AdminMediaLibrary } from './admin/MediaLibrary';
 export { AdminReports } from './admin/Reports';
+export { AdminSeo } from './admin/Seo';
 
 export { Home } from './public/Home';
 export { Works } from './public/Works';

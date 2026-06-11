@@ -8,8 +8,10 @@ import { formatMessageTime } from '../../lib/date';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import api from '../../services/api';
+import { useSeo } from '../../hooks/useSeo';
 
 export const MessageList = () => {
+    useSeo({ pageType: 'MESSAGES' });
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');

@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Heart, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSeo } from '../../hooks/useSeo';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
 export const Works = () => {
+    useSeo({ pageType: 'WORKS_LIST' });
     const [works, setWorks] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');

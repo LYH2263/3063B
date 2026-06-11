@@ -15,7 +15,9 @@ import settingsRoutes from './routes/settings';
 import mediaRoutes from './routes/media';
 import reportRoutes from './routes/report';
 import pointRoutes from './routes/point';
+import seoRoutes from './routes/seo';
 import { initPointSystem } from './services/pointService';
+import { ensureDefaultSeoConfigs } from './controllers/seo';
 
 dotenv.config();
 
@@ -40,6 +42,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
+app.use('/api/seo', seoRoutes);
+app.use('/sitemap.xml', seoRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running successfully!');
@@ -55,5 +59,11 @@ app.listen(port, async () => {
         console.log('Point system initialized successfully');
     } catch (error) {
         console.error('Failed to initialize point system:', error);
+    }
+    try {
+        await ensureDefaultSeoConfigs();
+        console.log('SEO default configs initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize SEO configs:', error);
     }
 });

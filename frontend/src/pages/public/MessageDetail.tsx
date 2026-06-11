@@ -12,6 +12,7 @@ import {
 import { formatChatTime, shouldShowDateDivider, formatDateDivider } from '../../lib/date';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useSeo } from '../../hooks/useSeo';
 
 interface LocationState {
     username?: string;
@@ -19,6 +20,7 @@ interface LocationState {
 }
 
 export const MessageDetail = () => {
+    useSeo({ pageType: 'MESSAGES' });
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();

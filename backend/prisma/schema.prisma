@@ -267,3 +267,36 @@ model LevelConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum SeoPageType {
+  HOME
+  WORKS_LIST
+  WORK_DETAIL
+  LOGIN
+  REGISTER
+  PROFILE
+  MESSAGES
+}
+
+model SeoConfig {
+  id            Int         @id @default(autoincrement())
+  pageType      SeoPageType @unique
+  titleTemplate String      // 支持 {title}, {siteName} 占位符
+  keywords      String?
+  description   String?     @db.Text
+  ogImage       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model WorkSeo {
+  id          Int      @id @default(autoincrement())
+  workId      Int      @unique
+  work        Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  customTitle String?
+  keywords    String?
+  description String?  @db.Text
+  ogImage     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

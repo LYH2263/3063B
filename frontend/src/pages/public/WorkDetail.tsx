@@ -7,11 +7,14 @@ import { Heart, ArrowLeft, Eye, Star, Flag } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useSeo } from '../../hooks/useSeo';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
 export const WorkDetail = () => {
     const { id } = useParams();
+    const workIdNum = id ? parseInt(id) : undefined;
+    useSeo({ pageType: 'WORK_DETAIL', workId: workIdNum });
     const navigate = useNavigate();
     const [work, setWork] = useState<any>(null);
     const [loading, setLoading] = useState(true);

@@ -4,8 +4,10 @@ import { useToast } from '../../context/ToastContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import api from '../../services/api';
+import { useSeo } from '../../hooks/useSeo';
 
 export const Register = () => {
+    useSeo({ pageType: 'REGISTER' });
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);

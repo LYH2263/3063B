@@ -7,6 +7,7 @@ import LevelBadge from '../../components/LevelBadge';
 import api from '../../services/api';
 import { Heart, MessageSquare, User, Gift, Clock, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { useSeo } from '../../hooks/useSeo';
 
 interface PointInfo {
     points: number;
@@ -54,6 +55,7 @@ const actionTypeLabels: Record<string, string> = {
 };
 
 export const Profile = () => {
+    useSeo({ pageType: 'PROFILE' });
     const { user } = useAuth();
     const { success, error } = useToast();
     const [favorites, setFavorites] = useState<any[]>([]);
