@@ -86,3 +86,33 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     return apiResponse(res, 200, '资料修改成功 (Profile updated successfully)');
 };
+
+export const searchUsers = async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.userId;
+    const search = req.query.search as string;
+
+    if (!search) {
+        return apiResponse(res, 400, 'Search query is required');
+    }
+
+    const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!currentUser || currentUser.status === 'BANNED') {
+        return apiResponse(res, 403, 'Your account is banned');
+    }
+
+    const users = await prisma.user.findMany({
+        where: {
+            username: {
+                contains: search,
+            },
+        },
+        select: {
+            id: true,
+            username: true,
+            status: true,
+        },
+        take: 20,
+    });
+
+    return apiResponse(res, 200, 'Success', users);
+};

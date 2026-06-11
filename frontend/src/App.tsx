@@ -8,7 +8,7 @@ import PublicLayout from './layouts/PublicLayout';
 
 import {
   AdminDashboard, AdminWorks, AdminUsers, AdminStyles, AdminMessages, AdminSettings, AdminOperationLogs,
-  Home, Works, Login, Register, Profile, WorkDetail
+  Home, Works, Login, Register, Profile, WorkDetail, MessageList, MessageDetail
 } from './pages';
 
 const App = () => {
@@ -26,6 +26,8 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/messages" element={<MessageList />} />
+                <Route path="/messages/:id" element={<MessageDetail />} />
               </Route>
 
               {/* Admin Routes with Sidebar Wrap */}

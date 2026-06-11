@@ -1,12 +1,38 @@
-import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import { useStyle } from '../context/StyleContext';
+import { getUnreadCount } from '../services/dm';
 
 export const PublicLayout = () => {
     const { user, logout, isAdmin } = useAuth();
     const { style } = useStyle();
+    const location = useLocation();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (!user) {
+            setUnreadCount(0);
+            return;
+        }
+
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await getUnreadCount();
+                if (res.code === 200) {
+                    setUnreadCount(res.data.count);
+                }
+            } catch (err) {
+            }
+        };
+
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 5000);
+
+        return () => clearInterval(interval);
+    }, [user, location.pathname]);
 
     return (
         <div className={cn("min-h-screen flex flex-col", style?.layoutMode === 'DUAL' ? 'max-w-7xl mx-auto' : '')}>
@@ -21,16 +47,38 @@ export const PublicLayout = () => {
                                 独立站
                             </Link>
                             <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
-                                <Link to="/" className="hover:text-primary transition-colors">首页</Link>
-                                <Link to="/works" className="hover:text-primary transition-colors">作品集</Link>
-                                {user && <Link to="/profile" className="hover:text-primary transition-colors">个人主页</Link>}
+                                <Link to="/" className={cn("hover:text-primary transition-colors", location.pathname === '/' && 'text-primary')}>首页</Link>
+                                <Link to="/works" className={cn("hover:text-primary transition-colors", location.pathname.startsWith('/works') && 'text-primary')}>作品集</Link>
+                                {user && (
+                                    <>
+                                        <Link to="/profile" className={cn("hover:text-primary transition-colors", location.pathname === '/profile' && 'text-primary')}>个人主页</Link>
+                                        <Link to="/messages" className={cn("hover:text-primary transition-colors relative", location.pathname.startsWith('/messages') && 'text-primary')}>
+                                            <span className="flex items-center gap-1">
+                                                私信
+                                                {unreadCount > 0 && (
+                                                    <span className="min-w-5 h-5 px-1.5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </Link>
+                                    </>
+                                )}
                             </nav>
                         </div>
 
                         <div className="flex items-center gap-4 text-sm font-medium">
                             {user ? (
                                 <>
-                                    <span className="text-gray-500 dark:text-gray-400">你好, {user.username}</span>
+                                    <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">你好, {user.username}</span>
+                                    <Link to="/messages" className="relative md:hidden">
+                                        <MessageSquare className="w-5 h-5 text-gray-600" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </Link>
                                     {isAdmin && (
                                         <Link to="/admin" className="text-primary hover:underline">管理后台</Link>
                                     )}

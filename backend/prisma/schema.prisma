@@ -36,17 +36,21 @@ enum LayoutMode {
 }
 
 model User {
-  id            Int             @id @default(autoincrement())
-  username      String          @unique
-  passwordHash  String
-  roleType      RoleType        @default(USER)
-  permissions   String?         // Allowed string like "STYLE,WORK,USER,MESSAGE,SETTING"
-  status        Status          @default(ACTIVE)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  interactions  Interaction[]
-  messages      Message[]
-  operationLogs OperationLog[]
+  id                  Int                  @id @default(autoincrement())
+  username            String               @unique
+  passwordHash        String
+  roleType            RoleType             @default(USER)
+  permissions         String?              // Allowed string like "STYLE,WORK,USER,MESSAGE,SETTING"
+  status              Status               @default(ACTIVE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  interactions        Interaction[]
+  messages            Message[]
+  operationLogs       OperationLog[]
+  conversationsAsOne  Conversation[]       @relation("ConversationOne")
+  conversationsAsTwo  Conversation[]       @relation("ConversationTwo")
+  sentPrivateMessages PrivateMessage[]     @relation("MessageSender")
+  receivedPrivateMessages PrivateMessage[] @relation("MessageReceiver")
 }
 
 model Work {
@@ -117,4 +121,35 @@ model OperationLog {
   detail    String?  @db.Text
   ip        String?
   createdAt DateTime @default(now())
+}
+
+model Conversation {
+  id              Int              @id @default(autoincrement())
+  participantOne  User             @relation("ConversationOne", fields: [participantOneId], references: [id])
+  participantOneId Int
+  participantTwo  User             @relation("ConversationTwo", fields: [participantTwoId], references: [id])
+  participantTwoId Int
+  messages        PrivateMessage[]
+  lastMessageAt   DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([participantOneId, participantTwoId])
+}
+
+model PrivateMessage {
+  id              Int          @id @default(autoincrement())
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId  Int
+  sender          User         @relation("MessageSender", fields: [senderId], references: [id])
+  senderId        Int
+  receiver        User         @relation("MessageReceiver", fields: [receiverId], references: [id])
+  receiverId      Int
+  content         String       @db.Text
+  isRead          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
 }
