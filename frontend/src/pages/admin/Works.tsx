@@ -4,7 +4,8 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
-import { Trash2, Edit, Plus, Eye } from 'lucide-react';
+import { MediaPicker } from '../../components/MediaPicker';
+import { Trash2, Edit, Plus, Eye, Image } from 'lucide-react';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
@@ -16,6 +17,7 @@ export const AdminWorks = () => {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [workToDelete, setWorkToDelete] = useState<number | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
     const { success, error } = useToast();
 
@@ -218,8 +220,25 @@ export const AdminWorks = () => {
                     </div>
                     <Input label="分类" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} />
                     <Input label="标签 (逗号分隔)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} />
-                    <Input label="标签 (逗号分隔)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} />
-                    <Input label="资源 URL (图片/视频链接)" value={formData.mediaUrl} onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })} />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">资源 URL (图片/视频链接)</label>
+                        <div className="flex gap-2">
+                            <Input
+                                className="flex-1"
+                                value={formData.mediaUrl}
+                                onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })}
+                                placeholder="输入URL或点击右侧从图库选择"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setMediaPickerOpen(true)}
+                            >
+                                <Image className="w-4 h-4 mr-1" />
+                                从图库选择
+                            </Button>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-4 p-2 bg-gray-50 rounded border border-gray-100">
                         {formData.mediaUrl && (
                             <img 
@@ -243,6 +262,15 @@ export const AdminWorks = () => {
             <Modal isOpen={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} title="确认删除" footer={<><Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>取消</Button><Button variant="danger" onClick={handleDelete}>确认删除</Button></>}>
                 <p>您确定要删除此作品吗？包含的点赞与收藏互动数据也会被删除。</p>
             </Modal>
+
+            <MediaPicker
+                isOpen={mediaPickerOpen}
+                onClose={() => setMediaPickerOpen(false)}
+                selectedUrl={formData.mediaUrl}
+                onSelect={(media) => {
+                    setFormData({ ...formData, mediaUrl: media.fileUrl });
+                }}
+            />
         </div>
     );
 };

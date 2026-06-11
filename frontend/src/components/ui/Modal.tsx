@@ -7,15 +7,16 @@ interface ModalProps {
     title: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
+    maxWidth?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-lg' }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity p-4">
             <div
-                className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg transform transition-all p-6 relative"
+                className={`bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full ${maxWidth} transform transition-all p-6 relative max-h-[90vh] overflow-hidden flex flex-col`}
                 onClick={e => e.stopPropagation()}
             >
                 <button
@@ -24,14 +25,14 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                 >
                     <X className="w-5 h-5" />
                 </button>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 pr-6">{title}</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 pr-6 flex-shrink-0">{title}</h3>
 
-                <div className="text-gray-600 dark:text-gray-300">
+                <div className="text-gray-600 dark:text-gray-300 overflow-y-auto flex-1">
                     {children}
                 </div>
 
                 {footer && (
-                    <div className="mt-6 flex justify-end gap-3">
+                    <div className="mt-6 flex justify-end gap-3 flex-shrink-0 pt-4 border-t border-gray-100 dark:border-gray-700">
                         {footer}
                     </div>
                 )}

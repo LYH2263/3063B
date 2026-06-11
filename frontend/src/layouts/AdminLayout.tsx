@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Image as ImageIcon, Palette, MessageSquare, LogOut, Settings, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, Image as ImageIcon, Palette, MessageSquare, LogOut, Settings, Activity, FolderImage } from 'lucide-react';
 
 export default function AdminLayout() {
     const { user, isAdmin, logout } = useAuth();
@@ -18,6 +18,7 @@ export default function AdminLayout() {
     const navItems = [
         { name: '控制台', path: '/admin', icon: LayoutDashboard },
         { name: '作品管理', path: '/admin/works', icon: ImageIcon },
+        { name: '媒体资源', path: '/admin/media', icon: FolderImage },
         { path: '/admin/users', name: '用户管理', icon: Users },
         { path: '/admin/styles', name: '界面风格与主题', icon: Palette },
         { path: '/admin/messages', name: '留言审核', icon: MessageSquare },
