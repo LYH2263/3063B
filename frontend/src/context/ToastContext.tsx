@@ -13,6 +13,7 @@ interface ToastContextType {
     toast: (message: string, type?: ToastType) => void;
     success: (message: string) => void;
     error: (message: string) => void;
+    confirm: (message: string) => Promise<boolean>;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -28,11 +29,16 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }, 3000); // auto remove after 3s
     };
 
+    const confirm = (message: string): Promise<boolean> => {
+        return Promise.resolve(window.confirm(message));
+    };
+
     return (
         <ToastContext.Provider value={{
             toast: t,
             success: (msg) => t(msg, 'success'),
-            error: (msg) => t(msg, 'error')
+            error: (msg) => t(msg, 'error'),
+            confirm
         }}>
             {children}
             <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none">

@@ -8,6 +8,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useSeo } from '../../hooks/useSeo';
+import { recordBrowse } from '../../services/browseHistory';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
@@ -29,6 +30,10 @@ export const WorkDetail = () => {
         try {
             const res: any = await api.get(`/works/${id}`);
             setWork(res.data);
+
+            if (user && workIdNum) {
+                recordBrowse(workIdNum).catch(() => {});
+            }
         } catch (err: any) {
             toast('获取作品详情失败', 'error');
             navigate('/works');

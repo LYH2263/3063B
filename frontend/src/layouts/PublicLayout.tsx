@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import { useStyle } from '../context/StyleContext';
@@ -52,6 +52,12 @@ export const PublicLayout = () => {
                                 {user && (
                                     <>
                                         <Link to="/profile" className={cn("hover:text-primary transition-colors", location.pathname === '/profile' && 'text-primary')}>个人主页</Link>
+                                        <Link to="/browse-history" className={cn("hover:text-primary transition-colors", location.pathname === '/browse-history' && 'text-primary')}>
+                                            <span className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4 inline" />
+                                                最近浏览
+                                            </span>
+                                        </Link>
                                         <Link to="/messages" className={cn("hover:text-primary transition-colors relative", location.pathname.startsWith('/messages') && 'text-primary')}>
                                             <span className="flex items-center gap-1">
                                                 私信

@@ -83,6 +83,7 @@ model User {
   reports             Report[]             @relation("Reporter")
   handledReports      Report[]             @relation("Handler")
   pointLogs           PointLog[]
+  browseHistories     BrowseHistory[]
 }
 
 model Work {
@@ -299,4 +300,17 @@ model WorkSeo {
   ogImage     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model BrowseHistory {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId    Int
+  viewedAt  DateTime @default(now())
+
+  @@unique([userId, workId])
+  @@index([userId])
+  @@index([userId, viewedAt])
 }

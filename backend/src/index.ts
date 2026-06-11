@@ -16,6 +16,7 @@ import mediaRoutes from './routes/media';
 import reportRoutes from './routes/report';
 import pointRoutes from './routes/point';
 import seoRoutes from './routes/seo';
+import browseHistoryRoutes from './routes/browseHistory';
 import { initPointSystem } from './services/pointService';
 import { ensureDefaultSeoConfigs } from './controllers/seo';
 
@@ -43,6 +44,7 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/seo', seoRoutes);
+app.use('/api/browse-history', browseHistoryRoutes);
 app.use('/sitemap.xml', seoRoutes);
 
 app.get('/', (req, res) => {

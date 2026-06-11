@@ -17,3 +17,4 @@ export { Profile } from './public/Profile';
 export { WorkDetail } from './public/WorkDetail';
 export { MessageList } from './public/MessageList';
 export { MessageDetail } from './public/MessageDetail';
+export { BrowseHistory } from './public/BrowseHistory';
