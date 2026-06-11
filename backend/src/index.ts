@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin';
 import uploadRoutes from './routes/upload';
 import settingsRoutes from './routes/settings';
 import mediaRoutes from './routes/media';
+import reportRoutes from './routes/report';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running successfully!');

@@ -42,6 +42,19 @@ enum MediaType {
   OTHER
 }
 
+enum ReportType {
+  INFRINGEMENT
+  INAPPROPRIATE_CONTENT
+  SPAM_AD
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
 model User {
   id                  Int                  @id @default(autoincrement())
   username            String               @unique
@@ -58,6 +71,8 @@ model User {
   conversationsAsTwo  Conversation[]       @relation("ConversationTwo")
   sentPrivateMessages PrivateMessage[]     @relation("MessageSender")
   receivedPrivateMessages PrivateMessage[] @relation("MessageReceiver")
+  reports             Report[]             @relation("Reporter")
+  handledReports      Report[]             @relation("Handler")
 }
 
 model Work {
@@ -72,6 +87,7 @@ model Work {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   interactions Interaction[]
+  reports      Report[]
 }
 
 model Interaction {
@@ -177,5 +193,28 @@ model Media {
   updatedAt   DateTime  @updatedAt
 
   @@index([mediaType])
+  @@index([createdAt])
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  work        Work         @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId      Int
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id])
+  reporterId  Int
+  reportType  ReportType
+  description String       @db.Text
+  status      ReportStatus @default(PENDING)
+  handler     User?        @relation("Handler", fields: [handlerId], references: [id])
+  handlerId   Int?
+  handledAt   DateTime?
+  handleNote  String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([workId, reporterId, reportType])
+  @@index([workId])
+  @@index([reporterId])
+  @@index([status])
   @@index([createdAt])
 }

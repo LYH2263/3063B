@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Heart, ArrowLeft, Eye, Star } from 'lucide-react';
+import { Heart, ArrowLeft, Eye, Star, Flag } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
@@ -12,6 +15,10 @@ export const WorkDetail = () => {
     const navigate = useNavigate();
     const [work, setWork] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportType, setReportType] = useState('');
+    const [reportDescription, setReportDescription] = useState('');
+    const [submittingReport, setSubmittingReport] = useState(false);
     const { user } = useAuth();
     const { toast } = useToast();
 
@@ -57,6 +64,38 @@ export const WorkDetail = () => {
         }
     };
 
+    const handleReport = async () => {
+        if (!user) {
+            toast('请先登录后再举报', 'info');
+            return;
+        }
+        if (!reportType) {
+            toast('请选择举报类型', 'warning');
+            return;
+        }
+        if (reportDescription.trim().length < 5) {
+            toast('请填写举报说明（至少5个字符）', 'warning');
+            return;
+        }
+
+        setSubmittingReport(true);
+        try {
+            await api.post('/reports', {
+                workId: id,
+                reportType,
+                description: reportDescription
+            });
+            toast('举报提交成功，我们会尽快处理', 'success');
+            setReportModalOpen(false);
+            setReportType('');
+            setReportDescription('');
+        } catch (err: any) {
+            toast(err.message || '举报提交失败', 'error');
+        } finally {
+            setSubmittingReport(false);
+        }
+    };
+
     if (loading) {
         return <div className="py-20 text-center text-gray-500">加载中...</div>;
     }
@@ -92,6 +131,9 @@ export const WorkDetail = () => {
                             <button onClick={handleFavorite} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${isFavorited ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
                                 <Star className={`w-4 h-4 ${isFavorited ? 'fill-yellow-500 text-yellow-500' : ''}`} /> {isFavorited ? '已收藏' : '收藏'}
                             </button>
+                            <button onClick={() => setReportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-full border transition-colors bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100">
+                                <Flag className="w-4 h-4" /> 举报
+                            </button>
                         </div>
                     </div>
 
@@ -122,6 +164,45 @@ export const WorkDetail = () => {
                     )}
                 </div>
             </div>
+
+            <Modal isOpen={reportModalOpen} onClose={() => setReportModalOpen(false)} title="举报作品" footer={<><Button variant="ghost" onClick={() => setReportModalOpen(false)}>取消</Button><Button onClick={handleReport} disabled={submittingReport}>{submittingReport ? '提交中...' : '提交举报'}</Button></>}>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">举报类型</label>
+                        <div className="space-y-2">
+                            {[
+                                { value: 'INFRINGEMENT', label: '侵权抄袭' },
+                                { value: 'INAPPROPRIATE_CONTENT', label: '不当内容' },
+                                { value: 'SPAM_AD', label: '垃圾广告' },
+                                { value: 'OTHER', label: '其他问题' }
+                            ].map(option => (
+                                <label key={option.value} className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="reportType"
+                                        value={option.value}
+                                        checked={reportType === option.value}
+                                        onChange={e => setReportType(e.target.value)}
+                                        className="text-primary focus:ring-primary"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">补充说明</label>
+                        <textarea
+                            className="w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none dark:bg-slate-800 dark:text-white"
+                            rows={4}
+                            placeholder="请详细描述举报理由，以便我们更好地处理..."
+                            value={reportDescription}
+                            onChange={e => setReportDescription(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-400 mt-1">至少 5 个字符</p>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
