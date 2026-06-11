@@ -14,6 +14,8 @@ import uploadRoutes from './routes/upload';
 import settingsRoutes from './routes/settings';
 import mediaRoutes from './routes/media';
 import reportRoutes from './routes/report';
+import pointRoutes from './routes/point';
+import { initPointSystem } from './services/pointService';
 
 dotenv.config();
 
@@ -37,6 +39,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/points', pointRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running successfully!');
@@ -45,6 +48,12 @@ app.get('/', (req, res) => {
 // Global error handler
 app.use(errorHandler as express.ErrorRequestHandler);
 
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
+    try {
+        await initPointSystem();
+        console.log('Point system initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize point system:', error);
+    }
 });

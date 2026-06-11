@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PointActionType } from '@prisma/client';
 import { apiResponse } from '../middleware/error';
 import { AuthRequest } from '../middleware/auth';
+import { addPoints } from '../services/pointService';
 
 const prisma = new PrismaClient();
 
@@ -47,13 +48,26 @@ export const adminGetMessages = async (req: Request, res: Response) => {
 // Admin: Update message status
 export const adminUpdateMessageStatus = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-    const { status } = req.body; // 'APPROVED' | 'REJECTED' | 'PENDING'
+    const { status } = req.body;
     if (isNaN(id)) return apiResponse(res, 400, 'Invalid ID');
+
+    const existingMessage = await prisma.message.findUnique({ where: { id } });
+    if (!existingMessage) return apiResponse(res, 404, 'Message not found');
+
+    const wasApproved = existingMessage.status === 'APPROVED';
 
     const message = await prisma.message.update({
         where: { id },
         data: { status }
     });
+
+    if (status === 'APPROVED' && !wasApproved) {
+        addPoints(existingMessage.userId, PointActionType.MESSAGE_APPROVED, {
+            relatedId: id,
+            description: `留言被审核通过`,
+        }).catch(console.error);
+    }
+
     return apiResponse(res, 200, `Message ${status.toLowerCase()}`, message);
 };
 

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PointActionType } from '@prisma/client';
 import { apiResponse } from '../middleware/error';
 import { AuthRequest } from '../middleware/auth';
+import { addPoints } from '../services/pointService';
 
 const prisma = new PrismaClient();
 
@@ -67,7 +68,7 @@ export const getWorkDetail = async (req: Request, res: Response) => {
 // User: Interact (Like / Favorite)
 export const toggleInteraction = async (req: AuthRequest, res: Response) => {
     const id = parseInt(req.params.id);
-    const { type } = req.body; // 'LIKE' or 'FAVORITE'
+    const { type } = req.body;
     if (isNaN(id)) return apiResponse(res, 400, 'Invalid ID');
     if (!['LIKE', 'FAVORITE'].includes(type)) return apiResponse(res, 400, 'Invalid interaction type');
 
@@ -84,6 +85,15 @@ export const toggleInteraction = async (req: AuthRequest, res: Response) => {
         await prisma.interaction.create({
             data: { userId, workId: id, interactionType: type }
         });
+
+        if (type === 'FAVORITE') {
+            addPoints(userId, PointActionType.WORK_FAVORITED, {
+                dedupKey: `fav:user_${userId}_work_${id}`,
+                relatedId: id,
+                description: `收藏作品`,
+            }).catch(console.error);
+        }
+
         return apiResponse(res, 201, `${type} added`);
     }
 };

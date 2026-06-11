@@ -55,6 +55,14 @@ enum ReportStatus {
   REJECTED
 }
 
+enum PointActionType {
+  DAILY_LOGIN
+  MESSAGE_APPROVED
+  WORK_FAVORITED
+  WORK_PUBLISHED
+  ADMIN_ADJUST
+}
+
 model User {
   id                  Int                  @id @default(autoincrement())
   username            String               @unique
@@ -62,6 +70,7 @@ model User {
   roleType            RoleType             @default(USER)
   permissions         String?              // Allowed string like "STYLE,WORK,USER,MESSAGE,SETTING"
   status              Status               @default(ACTIVE)
+  points              Int                  @default(0)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   interactions        Interaction[]
@@ -73,6 +82,7 @@ model User {
   receivedPrivateMessages PrivateMessage[] @relation("MessageReceiver")
   reports             Report[]             @relation("Reporter")
   handledReports      Report[]             @relation("Handler")
+  pointLogs           PointLog[]
 }
 
 model Work {
@@ -217,4 +227,43 @@ model Report {
   @@index([reporterId])
   @@index([status])
   @@index([createdAt])
+}
+
+model PointLog {
+  id           Int             @id @default(autoincrement())
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  actionType   PointActionType
+  points       Int
+  balanceAfter Int
+  description  String?
+  relatedId    Int?
+  dedupKey     String?
+  createdAt    DateTime        @default(now())
+
+  @@index([userId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@unique([userId, actionType, dedupKey])
+}
+
+model PointRule {
+  id          Int             @id @default(autoincrement())
+  actionType  PointActionType @unique
+  points      Int
+  description String
+  isActive    Boolean         @default(true)
+  dailyLimit  Int?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model LevelConfig {
+  id        Int      @id @default(autoincrement())
+  level     Int      @unique
+  name      String
+  minPoints Int
+  color     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
