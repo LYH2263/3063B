@@ -7,7 +7,7 @@ import AdminLayout from './layouts/AdminLayout';
 import PublicLayout from './layouts/PublicLayout';
 
 import {
-  AdminDashboard, AdminWorks, AdminUsers, AdminStyles, AdminMessages, AdminSettings, AdminOperationLogs, AdminMediaLibrary, AdminReports, AdminSeo,
+  AdminDashboard, AdminWorks, AdminUsers, AdminStyles, AdminMessages, AdminSettings, AdminOperationLogs, AdminMediaLibrary, AdminReports, AdminSeo, AdminSensitiveWords,
   Home, Works, Login, Register, Profile, WorkDetail, MessageList, MessageDetail, BrowseHistory
 } from './pages';
 
@@ -41,6 +41,7 @@ const App = () => {
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="seo" element={<AdminSeo />} />
+                <Route path="sensitive-words" element={<AdminSensitiveWords />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="logs" element={<AdminOperationLogs />} />
               </Route>

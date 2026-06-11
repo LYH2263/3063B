@@ -3,11 +3,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
 import LevelBadge from '../../components/LevelBadge';
 import api from '../../services/api';
-import { Heart, MessageSquare, User, Gift, Clock, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
+import { Heart, MessageSquare, User, Gift, Clock, ChevronLeft, ChevronRight, Coins, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useSeo } from '../../hooks/useSeo';
+import type { FilterResponse, MatchResult } from '../../services/sensitiveWord';
+import { getLevelLabel, getLevelColor } from '../../services/sensitiveWord';
 
 interface PointInfo {
     points: number;
@@ -69,6 +72,8 @@ export const Profile = () => {
     const [logsTotalPages, setLogsTotalPages] = useState(0);
     const [isClaiming, setIsClaiming] = useState(false);
     const [hasClaimedToday, setHasClaimedToday] = useState(false);
+    const [filterModalOpen, setFilterModalOpen] = useState(false);
+    const [filterResult, setFilterResult] = useState<FilterResponse | null>(null);
 
     if (!user) {
         return <Navigate to="/login" replace />;
@@ -132,11 +137,33 @@ export const Profile = () => {
         e.preventDefault();
         if (!message.trim()) return;
         try {
-            await api.post('/messages', { content: message });
-            success('留言已提交，等待管理员审核。');
+            const res: any = await api.post('/messages', { content: message });
+            const data = res.data || {};
+            if (data.filterAction) {
+                setFilterResult({
+                    action: data.filterAction,
+                    matchedWords: data.matchedWords || []
+                });
+                setFilterModalOpen(true);
+            }
+            if (data.filterAction === 'REPLACE') {
+                success('留言提交成功，部分内容已被替换');
+            } else if (data.filterAction === 'REVIEW') {
+                success('留言提交成功，正在审核中');
+            } else {
+                success('留言已提交，等待管理员审核。');
+            }
             setMessage('');
         } catch (err: any) {
-            error(err.message || '留言提交失败');
+            if (err.code === 403 && err.data?.action === 'BLOCK') {
+                setFilterResult({
+                    action: 'BLOCK',
+                    matchedWords: err.data.matchedWords || []
+                });
+                setFilterModalOpen(true);
+            } else {
+                error(err.message || '留言提交失败');
+            }
         }
     };
 
@@ -390,6 +417,119 @@ export const Profile = () => {
                 </div>
             </div>
 
+            <FilterResultModal
+                isOpen={filterModalOpen}
+                onClose={() => setFilterModalOpen(false)}
+                result={filterResult}
+            />
         </div>
+    );
+};
+
+interface FilterModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    result: FilterResponse | null;
+}
+
+const FilterResultModal: React.FC<FilterModalProps> = ({ isOpen, onClose, result }) => {
+    if (!result) return null;
+
+    const getModalConfig = () => {
+        switch (result.action) {
+            case 'BLOCK':
+                return {
+                    icon: AlertTriangle,
+                    iconColor: 'text-red-500',
+                    bgColor: 'bg-red-50',
+                    borderColor: 'border-red-200',
+                    title: '留言包含违规内容',
+                    description: '您的留言包含以下违规内容，无法提交：'
+                };
+            case 'REPLACE':
+                return {
+                    icon: AlertTriangle,
+                    iconColor: 'text-yellow-500',
+                    bgColor: 'bg-yellow-50',
+                    borderColor: 'border-yellow-200',
+                    title: '部分内容已被替换',
+                    description: '您的留言包含以下敏感词，已自动替换为 *** 后提交：'
+                };
+            case 'REVIEW':
+                return {
+                    icon: Info,
+                    iconColor: 'text-blue-500',
+                    bgColor: 'bg-blue-50',
+                    borderColor: 'border-blue-200',
+                    title: '留言正在审核中',
+                    description: '您的留言包含以下内容，需要管理员审核后才能显示：'
+                };
+            default:
+                return {
+                    icon: CheckCircle,
+                    iconColor: 'text-green-500',
+                    bgColor: 'bg-green-50',
+                    borderColor: 'border-green-200',
+                    title: '提交成功',
+                    description: '您的留言已成功提交。'
+                };
+        }
+    };
+
+    const config = getModalConfig();
+    const Icon = config.icon;
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title=""
+            footer={
+                <Button onClick={onClose}>
+                    我知道了
+                </Button>
+            }
+        >
+            <div className="text-center py-4">
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${config.bgColor} mb-4`}>
+                    <Icon className={`w-8 h-8 ${config.iconColor}`} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{config.title}</h3>
+                <p className="text-gray-600 mb-6">{config.description}</p>
+
+                {result.matchedWords && result.matchedWords.length > 0 && (
+                    <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 text-left`}>
+                        <ul className="space-y-2">
+                            {result.matchedWords.map((match, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                    <span className="font-mono text-gray-800">{match.word}</span>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(match.level)}`}>
+                                        {getLevelLabel(match.level)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {result.action === 'BLOCK' && (
+                    <p className="mt-4 text-sm text-gray-500">
+                        请修改内容后重新提交。如有疑问，请联系管理员。
+                    </p>
+                )}
+
+                {result.action === 'REPLACE' && (
+                    <p className="mt-4 text-sm text-gray-500">
+                        敏感词已被替换，留言已提交并等待审核。
+                    </p>
+                )}
+
+                {result.action === 'REVIEW' && (
+                    <p className="mt-4 text-sm text-gray-500">
+                        留言已提交，管理员将在审核后决定是否展示。感谢您的理解与配合。
+                    </p>
+                )}
+            </div>
+        </Modal>
     );
 };

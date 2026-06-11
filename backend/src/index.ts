@@ -17,8 +17,10 @@ import reportRoutes from './routes/report';
 import pointRoutes from './routes/point';
 import seoRoutes from './routes/seo';
 import browseHistoryRoutes from './routes/browseHistory';
+import sensitiveWordRoutes from './routes/sensitiveWord';
 import { initPointSystem } from './services/pointService';
 import { ensureDefaultSeoConfigs } from './controllers/seo';
+import { initSensitiveWordFilter } from './services/sensitiveWordService';
 
 dotenv.config();
 
@@ -45,6 +47,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/browse-history', browseHistoryRoutes);
+app.use('/api/sensitive-words', sensitiveWordRoutes);
 app.use('/sitemap.xml', seoRoutes);
 
 app.get('/', (req, res) => {
@@ -67,5 +70,11 @@ app.listen(port, async () => {
         console.log('SEO default configs initialized successfully');
     } catch (error) {
         console.error('Failed to initialize SEO configs:', error);
+    }
+    try {
+        await initSensitiveWordFilter();
+        console.log('Sensitive word filter initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize sensitive word filter:', error);
     }
 });

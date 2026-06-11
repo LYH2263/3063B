@@ -3,6 +3,7 @@ import { PrismaClient, PointActionType } from '@prisma/client';
 import { apiResponse } from '../middleware/error';
 import { AuthRequest } from '../middleware/auth';
 import { addPoints } from '../services/pointService';
+import { filterContent } from '../services/sensitiveWordService';
 
 const prisma = new PrismaClient();
 
@@ -23,15 +24,42 @@ export const postMessage = async (req: AuthRequest, res: Response) => {
     const { content } = req.body;
     if (!content) return apiResponse(res, 400, 'Content is required');
 
+    const filterResult = filterContent(content);
+
+    if (!filterResult.allowed) {
+        const matchedWords = filterResult.matchedWords.map(m => m.word).join(', ');
+        return apiResponse(res, 403, `留言包含违规内容：${matchedWords}，无法提交`, {
+            action: 'BLOCK',
+            matchedWords: filterResult.matchedWords
+        });
+    }
+
+    const finalContent = filterResult.filteredContent;
+    const status = filterResult.reviewRequired ? 'PENDING' : 'PENDING';
+
     const message = await prisma.message.create({
         data: {
             userId: req.user!.userId,
-            content,
-            status: 'PENDING' // Needs admin approval by default
+            content: finalContent,
+            status
         }
     });
 
-    return apiResponse(res, 201, 'Message submitted and pending approval', message);
+    const responseData = {
+        ...message,
+        filterAction: filterResult.action,
+        matchedWords: filterResult.matchedWords
+    };
+
+    if (filterResult.action === 'REPLACE' && filterResult.matchedWords.length > 0) {
+        return apiResponse(res, 201, '留言提交成功，部分内容已被替换', responseData);
+    }
+
+    if (filterResult.reviewRequired) {
+        return apiResponse(res, 201, '留言提交成功，正在审核中', responseData);
+    }
+
+    return apiResponse(res, 201, 'Message submitted and pending approval', responseData);
 };
 
 // Admin: Get all messages
