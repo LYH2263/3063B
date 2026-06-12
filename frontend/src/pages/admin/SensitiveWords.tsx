@@ -364,7 +364,7 @@ export const AdminSensitiveWords = () => {
                             return (
                                 <Button
                                     key={p}
-                                    variant={p === page ? 'default' : 'outline'}
+                                    variant={p === page ? 'primary' : 'outline'}
                                     size="sm"
                                     onClick={() => setPage(p)}
                                 >

@@ -38,10 +38,10 @@ export const getMyBrowseHistory = async (
     });
 };
 
-export const deleteBrowseHistory = async (id: number) => {
+export const deleteBrowseHistory = async (id: number): Promise<{ code: number; message: string; data: any }> => {
     return api.delete(`/browse-history/${id}`);
 };
 
-export const clearAllBrowseHistory = async () => {
+export const clearAllBrowseHistory = async (): Promise<{ code: number; message: string; data: any }> => {
     return api.delete('/browse-history/clear/all');
 };

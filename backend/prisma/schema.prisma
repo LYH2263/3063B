@@ -85,6 +85,8 @@ model User {
   pointLogs           PointLog[]
   browseHistories     BrowseHistory[]
   favoriteFolders     FavoriteFolder[]
+  media               Media[]
+  backups             Backup[]
 }
 
 model Work {
@@ -101,6 +103,8 @@ model Work {
   interactions     Interaction[]
   reports         Report[]
   favoriteFolders FavoriteFolderWork[]
+  workSeo         WorkSeo?
+  browseHistories BrowseHistory[]
 }
 
 model Interaction {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
     id: number;
@@ -13,6 +13,7 @@ interface ToastContextType {
     toast: (message: string, type?: ToastType) => void;
     success: (message: string) => void;
     error: (message: string) => void;
+    info: (message: string) => void;
     confirm: (message: string) => Promise<boolean>;
 }
 
@@ -38,6 +39,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             toast: t,
             success: (msg) => t(msg, 'success'),
             error: (msg) => t(msg, 'error'),
+            info: (msg) => t(msg, 'info'),
             confirm
         }}>
             {children}
@@ -47,11 +49,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                         key={toast.id}
                         className={`pointer-events-auto flex items-center p-4 w-full max-w-xs text-sm rounded-lg shadow-lg text-white transform transition-all duration-300 translate-y-0 opacity-100 ` +
                             (toast.type === 'error' ? 'bg-red-500' :
-                                toast.type === 'success' ? 'bg-green-500' : 'bg-blue-500')}
+                                toast.type === 'success' ? 'bg-green-500' :
+                                    toast.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500')}
                     >
                         <div className="mr-3">
                             {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
                             {toast.type === 'error' && <AlertCircle className="w-5 h-5" />}
+                            {toast.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
                             {toast.type === 'info' && <Info className="w-5 h-5" />}
                         </div>
                         <div className="flex-1 font-medium">{toast.message}</div>
