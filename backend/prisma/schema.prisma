@@ -84,6 +84,7 @@ model User {
   handledReports      Report[]             @relation("Handler")
   pointLogs           PointLog[]
   browseHistories     BrowseHistory[]
+  favoriteFolders     FavoriteFolder[]
 }
 
 model Work {
@@ -97,8 +98,9 @@ model Work {
   viewCount    Int           @default(0)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  interactions Interaction[]
-  reports      Report[]
+  interactions     Interaction[]
+  reports         Report[]
+  favoriteFolders FavoriteFolderWork[]
 }
 
 model Interaction {
@@ -319,6 +321,41 @@ enum SensitiveWordLevel {
   BAN
   REPLACE
   REVIEW
+}
+
+enum FavoriteFolderVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model FavoriteFolder {
+  id           Int                    @id @default(autoincrement())
+  name         String
+  description  String?                @db.Text
+  visibility   FavoriteFolderVisibility @default(PRIVATE)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  works        FavoriteFolderWork[]
+  workCount    Int                    @default(0)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([visibility])
+}
+
+model FavoriteFolderWork {
+  id         Int             @id @default(autoincrement())
+  folder     FavoriteFolder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId   Int
+  work       Work            @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId     Int
+  addedAt    DateTime        @default(now())
+
+  @@unique([folderId, workId])
+  @@index([folderId])
+  @@index([workId])
 }
 
 model SensitiveWord {

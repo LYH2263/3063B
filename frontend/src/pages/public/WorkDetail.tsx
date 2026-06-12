@@ -3,12 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Heart, ArrowLeft, Eye, Star, Flag } from 'lucide-react';
+import { Heart, ArrowLeft, Eye, Star, Flag, FolderPlus, Check, Folder, ChevronRight } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useSeo } from '../../hooks/useSeo';
 import { recordBrowse } from '../../services/browseHistory';
+import {
+    getWorkFolderStatus,
+    batchAddWorkToFolders,
+    removeWorkFromFolder,
+    createFolder,
+    type FolderWithWorkStatus
+} from '../../services/favoriteFolder';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
@@ -24,7 +31,18 @@ export const WorkDetail = () => {
     const [reportDescription, setReportDescription] = useState('');
     const [submittingReport, setSubmittingReport] = useState(false);
     const { user } = useAuth();
-    const { toast } = useToast();
+    const { toast, success, error } = useToast();
+
+    const [folderModalOpen, setFolderModalOpen] = useState(false);
+    const [folders, setFolders] = useState<FolderWithWorkStatus[]>([]);
+    const [selectedFolderIds, setSelectedFolderIds] = useState<number[]>([]);
+    const [foldersLoading, setFoldersLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const [showCreateFolder, setShowCreateFolder] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+    const [newFolderDesc, setNewFolderDesc] = useState('');
+    const [creatingFolder, setCreatingFolder] = useState(false);
 
     const fetchWork = async () => {
         try {
@@ -59,16 +77,89 @@ export const WorkDetail = () => {
         }
     };
 
-    const handleFavorite = async () => {
+    const openFolderModal = async () => {
         if (!user) {
             toast('请先登录以收藏作品', 'info');
             return;
         }
+        if (!workIdNum) return;
+
+        setFolderModalOpen(true);
+        setFoldersLoading(true);
+        setShowCreateFolder(false);
+        setNewFolderName('');
+        setNewFolderDesc('');
+
         try {
-            await api.post(`/works/${id}/interact`, { type: 'FAVORITE' });
+            const data = await getWorkFolderStatus(workIdNum);
+            setFolders(data);
+            setSelectedFolderIds(data.filter(f => f.hasWork).map(f => f.id));
+        } catch (err: any) {
+            error(err.message || '获取收藏夹状态失败');
+        } finally {
+            setFoldersLoading(false);
+        }
+    };
+
+    const toggleFolder = (folderId: number) => {
+        setSelectedFolderIds(prev =>
+            prev.includes(folderId)
+                ? prev.filter(id => id !== folderId)
+                : [...prev, folderId]
+        );
+    };
+
+    const handleSaveFolders = async () => {
+        if (!workIdNum) return;
+
+        setSaving(true);
+        try {
+            const currentHasIds = folders.filter(f => f.hasWork).map(f => f.id);
+            const toAdd = selectedFolderIds.filter(id => !currentHasIds.includes(id));
+            const toRemove = currentHasIds.filter(id => !selectedFolderIds.includes(id));
+
+            if (toAdd.length > 0) {
+                await batchAddWorkToFolders(workIdNum, toAdd);
+            }
+
+            for (const folderId of toRemove) {
+                await removeWorkFromFolder(folderId, workIdNum);
+            }
+
+            success('收藏设置已保存');
+            setFolderModalOpen(false);
             fetchWork();
-        } catch (err) {
-            toast('操作失败', 'error');
+        } catch (err: any) {
+            error(err.message || '保存失败');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCreateFolder = async () => {
+        if (!newFolderName.trim()) {
+            error('请输入收藏夹名称');
+            return;
+        }
+
+        setCreatingFolder(true);
+        try {
+            const newFolder = await createFolder({
+                name: newFolderName.trim(),
+                description: newFolderDesc.trim() || undefined,
+                visibility: 'PRIVATE'
+            });
+
+            setFolders(prev => [newFolder as FolderWithWorkStatus, ...prev]);
+            setSelectedFolderIds(prev => [...prev, newFolder.id]);
+            setShowCreateFolder(false);
+            setNewFolderName('');
+            setNewFolderDesc('');
+            success('收藏夹创建成功');
+        } catch (err: any) {
+            error(err.message || '创建失败');
+        } finally {
+            setCreatingFolder(false);
         }
     };
 
@@ -112,6 +203,7 @@ export const WorkDetail = () => {
 
     const isLiked = user && work.interactions?.some((i: any) => i.userId === user.id && i.interactionType === 'LIKE');
     const isFavorited = user && work.interactions?.some((i: any) => i.userId === user.id && i.interactionType === 'FAVORITE');
+    const favoriteCount = work.interactions?.filter((i: any) => i.interactionType === 'FAVORITE').length || 0;
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4">
@@ -122,10 +214,10 @@ export const WorkDetail = () => {
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 {work.mediaUrl && (
                     <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">
-                        <img 
-                            src={work.mediaUrl.startsWith('http') ? work.mediaUrl : `${API_ROOT}${work.mediaUrl}`} 
-                            alt={work.title} 
-                            className="max-w-full max-h-full object-contain" 
+                        <img
+                            src={work.mediaUrl.startsWith('http') ? work.mediaUrl : `${API_ROOT}${work.mediaUrl}`}
+                            alt={work.title}
+                            className="max-w-full max-h-full object-contain"
                         />
                     </div>
                 )}
@@ -136,8 +228,12 @@ export const WorkDetail = () => {
                             <button onClick={handleLike} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${isLiked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
                                 <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500' : ''}`} /> {isLiked ? '已赞' : '点赞'}
                             </button>
-                            <button onClick={handleFavorite} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${isFavorited ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
-                                <Star className={`w-4 h-4 ${isFavorited ? 'fill-yellow-500 text-yellow-500' : ''}`} /> {isFavorited ? '已收藏' : '收藏'}
+                            <button
+                                onClick={openFolderModal}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${isFavorited ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                            >
+                                <Star className={`w-4 h-4 ${isFavorited ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                                {isFavorited ? '已收藏' : '收藏'}
                             </button>
                             <button onClick={() => setReportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-full border transition-colors bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100">
                                 <Flag className="w-4 h-4" /> 举报
@@ -148,6 +244,7 @@ export const WorkDetail = () => {
                     <div className="flex items-center gap-4 text-sm text-gray-500 mb-8 border-b pb-6 dark:border-gray-800">
                         <span className="px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-full">{work.category}</span>
                         <span className="flex items-center gap-1"><Eye className="w-4 h-4" /> {work.viewCount} 浏览</span>
+                        <span className="flex items-center gap-1"><Star className="w-4 h-4" /> {favoriteCount} 收藏</span>
                         <span>发布于: {new Date(work.createdAt).toLocaleDateString()}</span>
                     </div>
 
@@ -172,6 +269,123 @@ export const WorkDetail = () => {
                     )}
                 </div>
             </div>
+
+            {/* 收藏夹选择弹窗 */}
+            <Modal
+                isOpen={folderModalOpen}
+                onClose={() => setFolderModalOpen(false)}
+                title="收藏到收藏夹"
+                footer={
+                    <>
+                        <Button variant="ghost" onClick={() => setFolderModalOpen(false)}>
+                            取消
+                        </Button>
+                        <Button onClick={handleSaveFolders} disabled={saving || foldersLoading}>
+                            {saving ? '保存中...' : '保存'}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    {!showCreateFolder ? (
+                        <>
+                            <button
+                                onClick={() => setShowCreateFolder(true)}
+                                className="w-full flex items-center gap-3 p-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition-colors"
+                            >
+                                <FolderPlus className="w-5 h-5" />
+                                <span>新建收藏夹</span>
+                            </button>
+
+                            {foldersLoading ? (
+                                <div className="py-8 text-center text-gray-500">加载中...</div>
+                            ) : folders.length === 0 ? (
+                                <div className="py-8 text-center text-gray-500">
+                                    <Folder className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                    <p>还没有收藏夹，点击上方按钮创建</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-80 overflow-y-auto">
+                                    {folders.map((folder) => (
+                                        <button
+                                            key={folder.id}
+                                            onClick={() => toggleFolder(folder.id)}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                                                selectedFolderIds.includes(folder.id)
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                                    selectedFolderIds.includes(folder.id) ? 'bg-primary/20 text-primary' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'
+                                                }`}>
+                                                    <Folder className="w-5 h-5" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="font-medium text-gray-900 dark:text-white">{folder.name}</p>
+                                                    <p className="text-xs text-gray-500">{folder.workCount} 个作品</p>
+                                                </div>
+                                            </div>
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                                selectedFolderIds.includes(folder.id)
+                                                    ? 'border-primary bg-primary text-white'
+                                                    : 'border-gray-300'
+                                            }`}>
+                                                {selectedFolderIds.includes(folder.id) && (
+                                                    <Check className="w-4 h-4" />
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => setShowCreateFolder(false)}
+                                className="flex items-center gap-2 text-gray-500 hover:text-primary transition-colors"
+                            >
+                                <ChevronRight className="w-4 h-4 rotate-180" />
+                                返回收藏夹列表
+                            </button>
+
+                            <div className="space-y-3">
+                                <Input
+                                    label="收藏夹名称"
+                                    placeholder="请输入收藏夹名称"
+                                    value={newFolderName}
+                                    onChange={(e) => setNewFolderName(e.target.value)}
+                                    maxLength={50}
+                                    autoFocus
+                                />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        描述（可选）
+                                    </label>
+                                    <textarea
+                                        className="w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none dark:bg-slate-800 dark:text-white resize-none"
+                                        rows={2}
+                                        placeholder="简单描述..."
+                                        value={newFolderDesc}
+                                        onChange={(e) => setNewFolderDesc(e.target.value)}
+                                        maxLength={200}
+                                    />
+                                </div>
+                            </div>
+
+                            <Button
+                                onClick={handleCreateFolder}
+                                disabled={creatingFolder || !newFolderName.trim()}
+                                className="w-full"
+                            >
+                                {creatingFolder ? '创建中...' : '创建并添加'}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </Modal>
 
             <Modal isOpen={reportModalOpen} onClose={() => setReportModalOpen(false)} title="举报作品" footer={<><Button variant="ghost" onClick={() => setReportModalOpen(false)}>取消</Button><Button onClick={handleReport} disabled={submittingReport}>{submittingReport ? '提交中...' : '提交举报'}</Button></>}>
                 <div className="space-y-4">

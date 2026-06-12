@@ -6,8 +6,8 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import LevelBadge from '../../components/LevelBadge';
 import api from '../../services/api';
-import { Heart, MessageSquare, User, Gift, Clock, ChevronLeft, ChevronRight, Coins, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Heart, MessageSquare, User, Gift, Clock, ChevronLeft, ChevronRight, Coins, AlertTriangle, CheckCircle, Info, Folder, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useSeo } from '../../hooks/useSeo';
 import type { FilterResponse, MatchResult } from '../../services/sensitiveWord';
 import { getLevelLabel, getLevelColor } from '../../services/sensitiveWord';
@@ -61,6 +61,7 @@ export const Profile = () => {
     useSeo({ pageType: 'PROFILE' });
     const { user } = useAuth();
     const { success, error } = useToast();
+    const navigate = useNavigate();
     const [favorites, setFavorites] = useState<any[]>([]);
     const [message, setMessage] = useState('');
     const [password, setPassword] = useState('');
@@ -346,9 +347,19 @@ export const Profile = () => {
                 <div className="space-y-8">
                     {/* 我的收藏 */}
                     <div>
-                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                            <Heart className="w-6 h-6 text-red-500 fill-red-500" /> 我的收藏
-                        </h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-2">
+                                <Heart className="w-6 h-6 text-red-500 fill-red-500" /> 我的收藏
+                            </h2>
+                            <button
+                                onClick={() => navigate('/favorite-folders')}
+                                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+                            >
+                                <Folder className="w-4 h-4" />
+                                管理收藏夹
+                                <ChevronRightIcon className="w-4 h-4" />
+                            </button>
+                        </div>
                         <div className="space-y-3">
                             {favorites.slice(0, 3).map((f: any) => (
                                 <div key={f.id} className="flex gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100 items-center">
