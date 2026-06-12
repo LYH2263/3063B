@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Heart, Search } from 'lucide-react';
+import { Heart, Search, Rss, Copy, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSeo } from '../../hooks/useSeo';
+import { getFeedUrls, getCategories } from '../../services/feed';
 
 const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
@@ -13,8 +14,11 @@ export const Works = () => {
     const [works, setWorks] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
+    const [allCategories, setAllCategories] = useState<string[]>([]);
+    const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
     const { user } = useAuth();
     const { toast } = useToast();
+    const feedUrls = getFeedUrls(import.meta.env.VITE_API_URL || 'http://localhost:8063/api', category || undefined);
 
     const fetchWorks = async () => {
         try {
@@ -25,9 +29,35 @@ export const Works = () => {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const res: any = await getCategories();
+            if (res.code === 200) {
+                setAllCategories(res.data.categories);
+            }
+        } catch (err: any) {
+            console.error(err);
+        }
+    };
+
+    const copyToClipboard = async (text: string, type: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedUrl(type);
+            toast('链接已复制到剪贴板', 'success');
+            setTimeout(() => setCopiedUrl(null), 2000);
+        } catch (err) {
+            toast('复制失败，请手动复制', 'error');
+        }
+    };
+
     useEffect(() => {
         fetchWorks();
     }, [search, category]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
 
     const handleLike = async (id: number) => {
         if (!user) {
@@ -51,7 +81,7 @@ export const Works = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-10 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="relative w-full sm:w-96">
                     <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -63,15 +93,78 @@ export const Works = () => {
                     />
                 </div>
                 <div className="w-full sm:w-auto flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-                    {['', 'Web', 'Mobile', 'Design', 'Other'].map(cat => (
+                    {['', ...allCategories].map(cat => (
                         <button
-                            key={cat}
+                            key={cat || 'all'}
                             onClick={() => setCategory(cat)}
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${category === cat ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}
                         >
                             {cat || '全部'}
                         </button>
                     ))}
+                </div>
+            </div>
+
+            {/* Feed Subscription */}
+            <div className="mb-10 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                            <Rss className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                                {category ? `${category} 分类订阅` : '订阅最新作品'}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                通过 RSS 或 Atom 订阅，第一时间获取更新
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">RSS:</span>
+                            <div className="flex items-center gap-2 flex-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <code className="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">{feedUrls.rss}</code>
+                                <button
+                                    onClick={() => copyToClipboard(feedUrls.rss, 'rss')}
+                                    className="text-gray-400 hover:text-primary transition-colors"
+                                    title="复制链接"
+                                >
+                                    {copiedUrl === 'rss' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                                <a
+                                    href={feedUrls.rss}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline text-sm font-medium"
+                                >
+                                    订阅
+                                </a>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Atom:</span>
+                            <div className="flex items-center gap-2 flex-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <code className="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">{feedUrls.atom}</code>
+                                <button
+                                    onClick={() => copyToClipboard(feedUrls.atom, 'atom')}
+                                    className="text-gray-400 hover:text-primary transition-colors"
+                                    title="复制链接"
+                                >
+                                    {copiedUrl === 'atom' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                                <a
+                                    href={feedUrls.atom}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline text-sm font-medium"
+                                >
+                                    订阅
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

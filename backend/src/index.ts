@@ -18,6 +18,8 @@ import pointRoutes from './routes/point';
 import seoRoutes from './routes/seo';
 import browseHistoryRoutes from './routes/browseHistory';
 import sensitiveWordRoutes from './routes/sensitiveWord';
+import feedRoutes from './routes/feed';
+import { generateRssFeed, generateAtomFeed } from './controllers/feed';
 import { initPointSystem } from './services/pointService';
 import { ensureDefaultSeoConfigs } from './controllers/seo';
 import { initSensitiveWordFilter } from './services/sensitiveWordService';
@@ -49,6 +51,10 @@ app.use('/api/seo', seoRoutes);
 app.use('/api/browse-history', browseHistoryRoutes);
 app.use('/api/sensitive-words', sensitiveWordRoutes);
 app.use('/sitemap.xml', seoRoutes);
+app.use('/api/feed', feedRoutes);
+app.use('/feed', feedRoutes);
+app.get('/rss.xml', asyncHandler(generateRssFeed));
+app.get('/atom.xml', asyncHandler(generateAtomFeed));
 
 app.get('/', (req, res) => {
     res.send('API is running successfully!');

@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Clock } from 'lucide-react';
+import { MessageSquare, Clock, Rss } from 'lucide-react';
+import { getFeedUrls } from '../services/feed';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import { useStyle } from '../context/StyleContext';
 import { getUnreadCount } from '../services/dm';
+
+const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8063/api').replace(/\/api$/, '');
 
 export const PublicLayout = () => {
     const { user, logout, isAdmin } = useAuth();
     const { style } = useStyle();
     const location = useLocation();
     const [unreadCount, setUnreadCount] = useState(0);
+    const feedUrls = getFeedUrls(import.meta.env.VITE_API_URL || 'http://localhost:8063/api');
 
     useEffect(() => {
         if (!user) {
@@ -110,7 +114,34 @@ export const PublicLayout = () => {
             </main>
 
             <footer className="w-full border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                &copy; {new Date().getFullYear()} IndieSite 版权所有
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>&copy; {new Date().getFullYear()} IndieSite 版权所有</div>
+                        <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-2">
+                                <Rss className="w-4 h-4" />
+                                订阅：
+                            </span>
+                            <a
+                                href={feedUrls.rss}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline transition-colors"
+                            >
+                                RSS
+                            </a>
+                            <span className="text-gray-300 dark:text-gray-700">|</span>
+                            <a
+                                href={feedUrls.atom}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline transition-colors"
+                            >
+                                Atom
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </footer>
         </div>
     );
