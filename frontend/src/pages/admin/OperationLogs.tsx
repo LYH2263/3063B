@@ -16,7 +16,11 @@ const actionMap: Record<string, string> = {
     'REJECT_MESSAGE': '驳回用户留言',
     'DELETE_MESSAGE': '删除留言记录',
     'UPDATE_SETTINGS': '修改系统设置',
-    'LOGIN': '系统登录'
+    'LOGIN': '系统登录',
+    'CREATE_BACKUP': '创建数据备份',
+    'DOWNLOAD_BACKUP': '下载备份文件',
+    'DELETE_BACKUP': '删除备份文件',
+    'RESTORE_BACKUP': '从备份恢复数据'
 };
 
 export const AdminOperationLogs = () => {

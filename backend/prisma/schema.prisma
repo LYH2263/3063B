@@ -371,3 +371,26 @@ model SensitiveWord {
   @@index([isActive])
   @@index([word])
 }
+
+enum BackupStatus {
+  CREATING
+  COMPLETED
+  FAILED
+}
+
+model Backup {
+  id          Int          @id @default(autoincrement())
+  filename    String       @unique
+  version     String
+  status      BackupStatus @default(CREATING)
+  fileSize    Int
+  recordCount Int
+  checksum    String
+  note        String?
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  createdById Int
+  createdAt   DateTime     @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
